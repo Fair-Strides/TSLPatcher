@@ -13,6 +13,7 @@ use TSLPatcher::GUI;
 
 my $gamePath   = $ARGV[0];
 my $modPath 	= $ARGV[1];
+my $installOption = $ARGV[2];
 my $main_ini   = Config::IniMan->new("$modPath/tslpatcher.ini");
 my $build_menu = 0;
 my $answer     = 0;
@@ -46,7 +47,7 @@ foreach (keys %{$options})
 
 # If there are install options, build menu == 1;
 
-# With install options: Run SetInstallOption, RunInstallOption, ProcessInstallPath, Install
+# With install options: Run ProcessNamespaces, SetInstallOption, RunInstallOption, Install
 # Without install options: Run ProcessInstallPath, Install
 # if($build_menu == 0)
 # {
@@ -58,8 +59,16 @@ foreach (keys %{$options})
 # 	TSLPatcher::Functions::PopulateBuildMenu;
 # }
 
-TSLPatcher::FunctionsCLI::ProcessInstallPath;
-TSLPatcher::FunctionsCLI::Install;
+if ($installOption eq "") {
+	TSLPatcher::FunctionsCLI::ProcessInstallPath;
+	TSLPatcher::FunctionsCLI::Install;
+} else {
+	TSLPatcher::FunctionsCLI::ProcessNamespaces;
+	TSLPatcher::FunctionsCLI::SetInstallOption($installOption);
+	TSLPatcher::FunctionsCLI::RunInstallOption;
+	TSLPatcher::FunctionsCLI::Install;
+}
+
 
 # Activates GUI
 # $GUI->{mw}->MainLoop();

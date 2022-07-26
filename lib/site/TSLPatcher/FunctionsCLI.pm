@@ -412,7 +412,7 @@ sub Format
 
 sub WriteInstallLog
 {
-	open FH, ">", "$install_path/installlog.rtf";
+	open FH, ">", "$base/installlog.rtf";
 	print FH "{\\rtf1\\ansi\\ansicpg1252\\deff0\\deflang1033{\\fonttbl{\\f0\\fnil\fcharset0 Courier New;}}\n";
 	print FH "{\\colortbl ;\\red2\\green97\\blue17;\\red4\\green32\\blue152;\\red160\\green87\\blue2;\\red156\\green2\\blue2;\\red2\\green97\\blue17;}\n";
 	print FH "\\viewkind4\\uc1\\pard\\cf1\\b\\f0\\fs2";
@@ -525,7 +525,7 @@ sub ProcessNamespaces
 {
 	my $ns_ini = Config::IniMan->new($install_path . '\namespaces.ini');
 	
-	$GUI->{nsBrowser}->delete(0, 'end');
+	# $GUI->{nsBrowser}->delete(0, 'end');
 	
 	foreach($ns_ini->section_values('Namespaces'))
 	{
@@ -538,7 +538,7 @@ sub ProcessNamespaces
 		$nsOptions{$nsOptions{Count}}{Name} = $ns_ini->get($_, 'Name');
 		$nsOptions{$nsOptions{Count}}{Desc} = $ns_ini->get($_, 'Description');
 		
-		$GUI->{nsBrowser}->insert('end', $nsOptions{$nsOptions{Count}}{Name});
+		# $GUI->{nsBrowser}->insert('end', $nsOptions{$nsOptions{Count}}{Name});
 	}
 	
 	SetInstallOption(0);
@@ -547,8 +547,8 @@ sub ProcessNamespaces
 sub SetInstallOption
 {
 	$nsOptions{Index} = shift;
-	$GUI->{nsBrowserVar} = $nsOptions{$nsOptions{Index}}{Name};
-	$GUI->{nsDescript}->Contents($nsOptions{$nsOptions{Index}}{Desc});
+	# $GUI->{nsBrowserVar} = $nsOptions{$nsOptions{Index}}{Name};
+	# $GUI->{nsDescript}->Contents($nsOptions{$nsOptions{Index}}{Desc});
 }
 
 sub RunInstallOption
@@ -556,6 +556,9 @@ sub RunInstallOption
 	$install_path .= "\\" . $nsOptions{$nsOptions{Index}}{Path};
 	$install_info  = $nsOptions{$nsOptions{Index}}{Info};
 	$install_ini   = $nsOptions{$nsOptions{Index}}{Ini};
+	$install_name  = $nsOptions{$nsOptions{Index}}{Name};
+
+	print "\nSelected $install_name\n";
 	
 	&ProcessInstallPath;
 }
@@ -757,7 +760,7 @@ sub ProcessInstallPath
 		if(-e "$install_path/$install_info")
 		{
 #			print "h3\n";
-			ParseInfo("$install_path\\$install_info");
+			# ParseInfo("$install_path\\$install_info");
 #			print "h4\n";
 			$ini_object->read($install_path . "\\$install_ini");
 			$uninstall_ini->add_section("Settings");
