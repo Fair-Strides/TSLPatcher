@@ -9,6 +9,7 @@ use Bioware::TLK;
 use Bioware::TwoDA;
 
 use Config::IniMan;
+use Cwd;
 
 use constant {
 	LOG_LEVEL_VERBOSE     => 1,
@@ -411,6 +412,16 @@ sub WriteInstallLog
 	print FH "\\viewkind4\\uc1\\pard\\cf1\\b\\f0\\fs2";
 	print FH $log_text;
 	print FH "\\b0 \\par }";
+	close FH;
+
+	# Write summary for each mod installed
+	my $dir = getcwd;
+	my @splitLogs = split('\n', $log_text);
+	my @message = split("Done", $splitLogs[-1]);
+
+	open FH, ">>", "$dir/installSummary.txt";
+	print FH "$base:\n";
+	print FH "@message[1]\n";
 	close FH;
 }
 
