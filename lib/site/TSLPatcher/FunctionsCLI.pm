@@ -33,13 +33,7 @@ use File::Path qw/make_path remove_tree/;
 
 use Math::Round;
 
-#use RTF::HTMLConverter;
-
 use Scalar::Util qw/looks_like_number/;
-
-use TSLPatcher::GUI;
-
-#use XML::GDOME;
 
 use utf8;
 
@@ -49,7 +43,6 @@ my $game1   = 0;
 my $game2   = 0;
 my $pathgame1 = '';
 my $pathgame2 = '';
-my $GUI     = undef;
 
 my $install_path = $base . '/tslpatchdata';
 my $install_info = 'info.rtf';
@@ -462,29 +455,11 @@ sub ProcessMessage
 	else
 	{ $log_text .= "$pre\\cf$colorlog  \\bullet  $prefix$message\n"; }
 	
-	if($InstallInfo{bLogOld} == 0)
-	{
-		# $GUI->{mwInstallText}->insert('end', " • " . $prefix . $message . "\n", [$color]);
-	}
-	else
-	{
-		# $GUI->{mwInstallText}->insert('end', $prefix . $message . "\n");
-	}
-	
-	# my @yview_data = $GUI->{mwInstallText}->yview();
-	# #print "Yview: " . $yview_data[1] . "\n";
-	# if($yview_data[1] > 0.0)
-	# {
-	# 	$GUI->{mwInstallText}->yviewScroll(1, 'units');
-	# }
-
-	# $GUI->{mw}->update();
 }
 
 # Basic functions
 sub Exit;
 sub Set_Base { $base = shift; $install_path = $base . '/tslpatchdata'; }
-sub Set_GUI  { $GUI = shift; }
 
 sub SetPathFromIni
 {
@@ -525,8 +500,6 @@ sub ProcessNamespaces
 {
 	my $ns_ini = Config::IniMan->new($install_path . '\namespaces.ini');
 	
-	# $GUI->{nsBrowser}->delete(0, 'end');
-	
 	foreach($ns_ini->section_values('Namespaces'))
 	{
 		next if $_ eq '' or $_ =~ /^\;/;
@@ -537,8 +510,6 @@ sub ProcessNamespaces
 		$nsOptions{$nsOptions{Count}}{Path} = $ns_ini->get($_, 'DataPath');
 		$nsOptions{$nsOptions{Count}}{Name} = $ns_ini->get($_, 'Name');
 		$nsOptions{$nsOptions{Count}}{Desc} = $ns_ini->get($_, 'Description');
-		
-		# $GUI->{nsBrowser}->insert('end', $nsOptions{$nsOptions{Count}}{Name});
 	}
 	
 	SetInstallOption(0);
@@ -547,8 +518,6 @@ sub ProcessNamespaces
 sub SetInstallOption
 {
 	$nsOptions{Index} = shift;
-	# $GUI->{nsBrowserVar} = $nsOptions{$nsOptions{Index}}{Name};
-	# $GUI->{nsDescript}->Contents($nsOptions{$nsOptions{Index}}{Desc});
 }
 
 sub RunInstallOption
@@ -565,9 +534,6 @@ sub RunInstallOption
 
 # Build Menu functions
 sub NeedBuildMenu;
-sub PopulateBuildMenu;
-sub BuildMenu_ScrollLeft;
-sub BuildMenu_ScrollRight;
 sub RunInstallPath;
 
 use File::Find;
@@ -617,83 +583,6 @@ sub NeedBuildMenu
 	return $value;
 }
 
-sub PopulateBuildMenu
-{
-	$pages = int((scalar @subdirs) / ($submax + 1));
-	if((int(scalar @subdirs) % ($submax + 1)) > 0) { $pages += 1; }
-	
-	$GUI->{bmLabel2}->configure(-text=>"$subpage of $pages");
-	
-	foreach my $v ($subindex .. ($subindex + $submax))
-	{
-		if(defined($subdirs[$v]))
-		{
-			TSLPatcher::GUI::BMAddOption($v, $subdirs[$v]);
-		}
-		else
-		{
-			TSLPatcher::GUI::BMAddSpace($v);
-		}
-	}
-	
-	$GUI->{BMValue} = 0;
-	SetInstallPath(0);
-}
-
-sub BM_ScrollLeft
-{
-	if($subpage == 1) { return; }
-
-	foreach my $v ($subindex .. ($subindex + $submax))
-	{
-		TSLPatcher::GUI::BMRemoveOption($v);
-	}
-
-	$subindex -= ($submax + 1);
-	$subpage  -= 1;
-	
-	$GUI->{bmLabel2}->configure(-text=>"$subpage of $pages");
-	
-	foreach my $v ($subindex .. ($subindex + $submax))
-	{
-		if(defined($subdirs[$v]))
-		{
-			TSLPatcher::GUI::BMAddOption($v, $subdirs[$v]);
-		}
-		else
-		{
-			TSLPatcher::GUI::BMAddSpace($v);
-		}
-	}
-}
-
-sub BM_ScrollRight
-{
-	if($subpage == $pages) { return; }
-
-	foreach my $v ($subindex .. ($subindex + $submax))
-	{
-		TSLPatcher::GUI::BMRemoveOption($v);
-	}
-	
-	$subindex += ($submax + 1);
-	$subpage  += 1;
-	
-	$GUI->{bmLabel2}->configure(-text=>"$subpage of $pages");
-	
-	foreach my $v ($subindex .. ($subindex + $submax))
-	{
-		if(defined($subdirs[$v]))
-		{
-			TSLPatcher::GUI::BMAddOption($v, $subdirs[$v]);
-		}
-		else
-		{
-			TSLPatcher::GUI::BMAddSpace($v);
-		}
-	}
-}
-
 sub SetInstallPath
 {
 	my $index = shift;
@@ -704,10 +593,7 @@ sub SetInstallPath
 }
 
 sub RunInstallPath
-{
-    $GUI->{bm}->withdraw;
-	$GUI->{mw}->Popup(-popover=>undef, -overanchor=>'c', -popanchor=>'c');
-	
+{	
 	&ProcessInstallPath;
 }
 
@@ -726,42 +612,23 @@ sub DoSSFList;
 sub ProcessInstallPath
 {
 	print "\nProcessInstallPath\n";
-#	$GUI->{mw}->withdraw;
-	# $GUI->{ns}->withdraw;
-	# $GUI->{bm}->withdraw;
 
     if(-e "$install_path/namespaces.ini")
 	{
 #		print "h0a\n";
 		&ProcessNamespaces;
-		
-		# $GUI->{ns}->Popup(-popover=>$GUI->{mw}, -overanchor=>'c', -popanchor=>'c');
-		# $GUI->{mw}->withdraw;
 	}
 	else
 	{
-#		print "h0b\n";
-#		if(-e "$install_path/uninstall.ini")
-#		{
-#		    $GUI->{Popup2}{Message} = $Messages{LS_GUI_UNINSTALLOPT};
-#			$answer = $GUI->{Popup2}{Widget}->Show();
-#			
-#			if($answer eq 'Yes') { Uninstall(); }
-#		}
-
 		unless(-e "$install_path/$install_ini")
 		{
 			print "h1\n";
-			# $GUI->{Popup1}{Message} = Format($Messages{LS_GUI_CONFIGMISSING}, $install_ini);
-			# $answer = $GUI->{Popup1}{Widget}->Show();
 			exit;
 		}
 		
 		if(-e "$install_path/$install_info")
 		{
 #			print "h3\n";
-			# ParseInfo("$install_path\\$install_info");
-#			print "h4\n";
 			$ini_object->read($install_path . "\\$install_ini");
 			$uninstall_ini->add_section("Settings");
 			
@@ -786,62 +653,19 @@ sub ProcessInstallPath
 			if($InstallInfo{FileExists} == 0)
 			{
 				print "h7\n";
-				# $GUI->{Popup1}{Message} = Format($Messages{LS_GUI_CONFIGLOADERROR}, $install_ini);
-				# $GUI->{Popup1}{Widget}->Show();
 				exit;
 			}
-			
-			# $GUI->{mw}->configure(-title=>$InstallInfo{caption});
-#			print "h8\n";
-			
-			if($InstallInfo{bInstall} == 1)
-			{
-#				print "h9a\n";
-				# $GUI->{mwInstallBtn}->configure(-text=>$Messages{LS_GUI_BUTTONCAPINSTALL});
-			}
-			else
-			{
-#				print "h9b\n";
-				# $GUI->{mwInstallBtn}->configure(-text=>$Messages{LS_GUI_BUTTONCAPPATCH});
-			}
-			
-			# $GUI->{mw}->Popup(-popover=>undef, -overanchor=>'c', -popanchor=>'c');
 		}
 		else
 		{
 			# print "h2\n";
-			# $GUI->{Popup1}{Message} = Format($Messages{LS_GUI_INFOLOADERROR}, $install_info);
-			# $answer = $GUI->{Popup1}{Widget}->Show();
 			exit;
 		}
 	}
 }
 
-sub Exit
-{
-	if($bInstalled == 0)
-	{
-		$GUI->{Popup2}{Message} = $Messages{LS_GUI_CONFIRMQUIT};
-		my $answer = $GUI->{Popup2}{Widget}->Show();
-		
-		if($answer eq 'No') { return; }
-	}
-	
-	exit;
-}
-
 sub Install
 {
-# 	if($InstallInfo{sMessage} ne "N/A")
-# 	{
-# #		print "h10 - " . $InstallInfo{sMessage} . "\n";
-		
-# 		$GUI->{Popup2}{Message} = $InstallInfo{sMessage};
-# 		my $answer = $GUI->{Popup2}{Widget}->Show();
-		
-# 		if($answer eq 'No') { return; }
-# 	}
-
 	print "\n\nINSTALLING\n\n";
 	
 	# Finish grabbing the mod settings
@@ -872,8 +696,6 @@ sub Install
 		if((-e $install_dest_path) == 0)
 		{
 			ProcessMessage(Format($Messages{LS_LOG_INSINVALIDDESTINATION}, $install_dest_path));
-			# $GUI->{Popup1}{Message} = Format($Messages{LS_LOG_INSINVALIDDESTINATION}, $install_dest_path);
-			# $GUI->{Popup1}{Widget}->Show();
 			exit;
 		}
 		
@@ -897,17 +719,6 @@ sub Install
 	}
 	
 	ProcessMessage("Install path set to $install_dest_path.", LOG_LEVEL_VERBOSE);
-	
-	# $GUI->{mwInstallBtn}->configure(-state=>'disabled');
-	# $GUI->{mwExitBtn}->configure(-state=>'disabled');
-
-	# If the log is set to be active, make it show up.
-	# Also, hide the mod's info while we're at it. :)
-	# if($InstallInfo{iLogLevel} > 0)
-	# {
-	# 	$GUI->{mwInfoText}->packForget;
-	# 	$GUI->{mwInstallText}->pack(-pady=>10, -fill=>'both', -expand=>1);
-	# }
 
 	# Propertly format our time for the log...
 	my @time = localtime;
@@ -943,59 +754,42 @@ sub Install
 	GetFileCount();
 #	print "FileCount: $log_count\n";
 	
-	# $GUI->{mw}->update();
 	DoTLKList();
 	
-	# $GUI->{mw}->update();
 	DoInstallFiles();
 	
-	# $GUI->{mw}->update();
 	Do2DAList();
 	
-	# $GUI->{mw}->update();
 	DoGFFList();
 	
-	# $GUI->{mw}->update();
 	DoHACKList();
 	
-	# $GUI->{mw}->update();
 	DoCompileFiles();
 	
-	# $GUI->{mw}->update();
 	DoSSFList();
 	
-	# $GUI->{mw}->update();
 	# Now to do cleanup operations
 	DoCleanup();
 	
-	# $GUI->{mw}->update();
 	# End of the job, post a summary
 	if($log_alerts > 0 and $log_errors == 0)
 	{
 		ProcessMessage(Format($Messages{LS_LOG_RPOSUMMARYWARN}, $log_alerts), LOG_LEVEL_NOTICE);
-		# $GUI->{Popup1}{Message} = Format($Messages{LS_LOG_RPOSUMMARYWARN}, $log_alerts);
 	}
 	elsif($log_alerts == 0 and $log_errors > 0)
 	{
 		ProcessMessage(Format($Messages{LS_LOG_RPOSUMMARYERROR}, $log_errors), LOG_LEVEL_NOTICE);
-		# $GUI->{Popup1}{Message} = Format($Messages{LS_LOG_RPOSUMMARYERROR}, $log_errors);
 	}
 	elsif($log_alerts > 0 and $log_errors > 0)
 	{
 		ProcessMessage(Format($Messages{LS_LOG_RPOSUMMARYWARNERROR}, $log_alerts, $log_errors), LOG_LEVEL_NOTICE);
-		# $GUI->{Popup1}{Message} = Format($Messages{LS_LOG_RPOSUMMARYWARNERROR}, $log_alerts, $log_errors);
 	}
 	else
 	{
 		ProcessMessage($Messages{LS_LOG_RPOSUMMARY}, LOG_LEVEL_NOTICE);
-		# $GUI->{Popup1}{Message} = $Messages{LS_LOG_RPOSUMMARY};
 	}
 
 	$bInstalled = 1;
-	
-#	$uninstall_ini->write("$install_path/uninstall.ini");
-	# $GUI->{mwExitBtn}->configure(-state=>'normal');
-	# $GUI->{Popup1}{Widget}->Show();
 	
 	WriteInstallLog();
 }
@@ -1031,8 +825,6 @@ sub Uninstall
 		if((-e $install_dest_path) == 0)
 		{
 			ProcessMessage(Format($Messages{LS_LOG_INSINVALIDDESTINATION}, $install_dest_path));
-			# $GUI->{Popup1}{Message} = Format($Messages{LS_LOG_INSINVALIDDESTINATION}, $install_dest_path);
-			# $GUI->{Popup1}{Widget}->Show();
 			exit;
 		}
 		
@@ -1056,17 +848,6 @@ sub Uninstall
 	}
 	
 	ProcessMessage("Install path set to $install_dest_path.", LOG_LEVEL_VERBOSE);
-	
-	# $GUI->{mwInstallBtn}->configure(-state=>'disabled');
-	# $GUI->{mwExitBtn}->configure(-state=>'disabled');
-
-	# If the log is set to be active, make it show up.
-	# Also, hide the mod's info while we're at it. :)
-	# if($InstallInfo{iLogLevel} > 0)
-	# {
-	# 	$GUI->{mwInfoText}->packForget;
-	# 	$GUI->{mwInstallText}->pack(-pady=>10, -fill=>'both', -expand=>1);
-	# }
 
 	# Propertly format our time for the log...
 	my @time = localtime;
@@ -1102,58 +883,42 @@ sub Uninstall
 	GetFileCount();
 #	print "FileCount: $log_count\n";
 	
-	# $GUI->{mw}->update();
 	DoTLKList();
 	
-	# $GUI->{mw}->update();
 	DoInstallFiles();
 	
-	# $GUI->{mw}->update();
 	Do2DAList();
 	
-	# $GUI->{mw}->update();
 	DoGFFList();
 	
-	# $GUI->{mw}->update();
 	DoHACKList();
 	
-	# $GUI->{mw}->update();
 	DoCompileFiles();
 	
-	# $GUI->{mw}->update();
 	DoSSFList();
 	
-	# $GUI->{mw}->update();
 	# Now to do cleanup operations
 	DoCleanup();
 	
-	# $GUI->{mw}->update();
 	# End of the job, post a summary
 	if($log_alerts > 0 and $log_errors == 0)
 	{
 		ProcessMessage(Format($Messages{LS_LOG_RPOSUMMARYWARN}, $log_alerts), LOG_LEVEL_NOTICE);
-		# $GUI->{Popup1}{Message} = Format($Messages{LS_LOG_RPOSUMMARYWARN}, $log_alerts);
 	}
 	elsif($log_alerts == 0 and $log_errors > 0)
 	{
 		ProcessMessage(Format($Messages{LS_LOG_RPOSUMMARYERROR}, $log_errors), LOG_LEVEL_NOTICE);
-		# $GUI->{Popup1}{Message} = Format($Messages{LS_LOG_RPOSUMMARYERROR}, $log_errors);
 	}
 	elsif($log_alerts > 0 and $log_errors > 0)
 	{
 		ProcessMessage(Format($Messages{LS_LOG_RPOSUMMARYWARNERROR}, $log_alerts, $log_errors), LOG_LEVEL_NOTICE);
-		# $GUI->{Popup1}{Message} = Format($Messages{LS_LOG_RPOSUMMARYWARNERROR}, $log_alerts, $log_errors);
 	}
 	else
 	{
 		ProcessMessage($Messages{LS_LOG_RPOSUMMARY}, LOG_LEVEL_NOTICE);
-		# $GUI->{Popup1}{Message} = $Messages{LS_LOG_RPOSUMMARY};
 	}
 
 	$bInstalled = 1;
-	
-	# $GUI->{mwExitBtn}->configure(-state=>'normal');
-	# $GUI->{Popup1}{Widget}->Show();
 	
 	WriteInstallLog();
 }
@@ -1162,7 +927,6 @@ sub UpdateProgress
 {
 	$log_index++;
 	#print "$log_index / $log_count: " . (($log_index / $log_count) * 100) . "\n";
-	# $GUI->{mwProgress}->configure(-value=>($log_index/$log_count) * 100);
 }
 
 sub GetFileCount
@@ -1285,10 +1049,7 @@ sub ExecuteFile
     	   (defined($required) == 1) &&
 		   (-e "$install_dest_path\\override\\$required") == 0)
 		{
-			print "error 1: $required_msg\n";
-			$GUI->{Popup1}{Message} = $required_msg;
-			$GUI->{Popup1}{Widget}->Show();
-			
+			print "error 1: $required_msg\n";			
 			return (-1, '');
 		}
 		
@@ -1299,10 +1060,7 @@ sub ExecuteFile
 				return (1, "$install_dest_path/$filename");
 			}
 			else
-			{
-				$GUI->{Popup1}{Message} = Format($Messages{LS_EXC_FHTLKFILEMISSING}, $filename);
-				$GUI->{Popup1}{Widget}->Show();
-				
+			{				
 				return (-1, '');
 			}
 		}
@@ -1526,7 +1284,7 @@ sub ExecuteFile
 			{
 				ProcessMessage($Messages{LS_LOG_FHNOTSLPATCHDATAFILE}, LOG_LEVEL_VERBOSE);
 				$FileBox{-title} = Format($Messages{LS_DLG_MANUALLOCATEFILE}, $saveasfile, $sourcefile);
-				my $located = $GUI->{mw}->getOpenFile(%FileBox);
+				# my $located = $GUI->{mw}->getOpenFile(%FileBox);
 				
 				if($located ne '')
 				{
@@ -1537,9 +1295,7 @@ sub ExecuteFile
 				}
 				else
 				{
-					$GUI->{Popup1}{Message} = Format($Messages{LS_EXC_FHCRITFILEMISSING}, $saveasfile);
-					$GUI->{Popup1}{Widget}->Show();
-					ProcessMessage($GUI->{Popup1}{Message}, LOG_LEVEL_ERROR);
+					ProcessMessage(Format($Messages{LS_EXC_FHCRITFILEMISSING}, $saveasfile), LOG_LEVEL_ERROR);
 					return (0, '');
 				}
 			}
@@ -1570,7 +1326,7 @@ sub ExecuteFile
 	}
 	else
 	{
-		my $file = $GUI->{mw}->getOpenFile(%FileBox);
+		# my $file = $GUI->{mw}->getOpenFile(%FileBox);
 		if($file ne '')
 		{
 			$file =~ s/\\/\//g;
@@ -2249,9 +2005,7 @@ sub DoInstallFiles
 					{
 						ProcessMessage(Format($Messages{LS_LOG_INSCOPYFAILED}, $file), LOG_LEVEL_ERROR);
 					}
-				}
-				
-				# $GUI->{mw}->update();
+				}				
 			}
 			else
 			{
@@ -5245,13 +4999,9 @@ sub WriteRTFLine
 	my @tags = ();
 	
 #	print "Writing line #" . ($tag + 1) . " $line\nBolds: " . $FontInfo{'weight'} . " Italics: " . $FontInfo{'slant'} . " Underlines: " . $FontInfo{'underline'} . " Overstriked: " . $FontInfo{'overstrike'} . " Family: " . $FontInfo{'family'} . " Size: " . $FontInfo{'size'} . " CF: " . $ParaInfo{'colorfg'} . " CB: " . $ParaInfo{'colorbg'} . "\n\n";
-	$GUI->{'mwInfoText'}->tagConfigure('Tag' . $tag, -background=>$colorsbg[$ParaInfo{'colorbg'}], -foreground=>$colorsfg[$ParaInfo{'colorfg'}], -font=>[-weight=>$FontInfo{'weight'}, -slant=>$FontInfo{'slant'}, -underline=>$FontInfo{'underline'}, -overstrike=>$FontInfo{'overstrike'}, -family=>$FontInfo{'family'}, -size=>$FontInfo{'size'}],
-							-spacing1=>$ParaInfo{'spacing1'}, -spacing3=>$ParaInfo{'spacing3'},-underline=>$FontInfo{'-underline'}, -justify=>$ParaInfo{'align'});
 	push (@tags, 'Tag' . $tag);
 	
 	$tag++;
-
-	$GUI->{'mwInfoText'}->insert('end', $line, @tags);
 	@tags = ();
 	
 	if($aftertext ne '')
