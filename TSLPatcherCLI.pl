@@ -19,39 +19,51 @@ my $answer     = 0;
 
 my $username = $ENV{USERNAME};
 
-print "\nGame Path: $gamePath\n";
-print "\nMod Path: $modPath\n";
+print "\n~~~ Game Path: $gamePath\n";
+print "~~~ Mod Path: $modPath\n\n";
 
-TSLPatcher::Functions::Set_Base($modPath);
-TSLPatcher::GUI::Set_Base($modPath);
+TSLPatcher::FunctionsCLI::Set_Base($modPath);
+# TSLPatcher::GUI::Set_Base($modPath);
 
-my $k1path = $main_ini->get('', 'KotOR1', '');
-my $k2path = $main_ini->get('', 'KotOR2', '');
+# my $k1path = $main_ini->get('', 'KotOR1', '');
+# my $k2path = $main_ini->get('', 'KotOR2', '');
 
-if($k1path ne '') { TSLPatcher::Functions::SetPathFromIni(1, $k1path); }
-if($k2path ne '') { TSLPatcher::Functions::SetPathFromIni(2, $k2path); }
+# if($k1path ne '') { TSLPatcher::Functions::SetPathFromIni(1, $k1path); }
+# if($k2path ne '') { TSLPatcher::Functions::SetPathFromIni(2, $k2path); }
 
-$build_menu = TSLPatcher::Functions::NeedBuildMenu;
+TSLPatcher::FunctionsCLI::SetPathFromIni(1, $gamePath);
+TSLPatcher::FunctionsCLI::SetPathFromIni(2, $gamePath);
 
-my ($GUI, $options) = TSLPatcher::GUI::Create($build_menu, %{$main_ini->get_section()});
+$build_menu = TSLPatcher::FunctionsCLI::NeedBuildMenu;
+
+# Uses GUI options to determine title and geometry
+# my ($GUI, $options) = TSLPatcher::GUI::Create($build_menu, %{$main_ini->get_section()});
 
 foreach (keys %{$options})
 { unless ($_ eq '') { $main_ini->set($_, $options->{$_}); } }
 
-TSLPatcher::Functions::Set_GUI($GUI);
+# TSLPatcher::Functions::Set_GUI($GUI);
 
-if($build_menu == 0)
-{
-	TSLPatcher::Functions::ProcessInstallPath;
-}
-else
-{
-    $GUI->{bm}->Popup(-popover=>undef, -overanchor=>'c', -popanchor=>'c');
-	TSLPatcher::Functions::PopulateBuildMenu;
-}
+# If there are install options, build menu == 1;
 
-$GUI->{mw}->MainLoop();
+# With install options: Run SetInstallOption, RunInstallOption, ProcessInstallPath, Install
+# Without install options: Run ProcessInstallPath, Install
+# if($build_menu == 0)
+# {
+# 	TSLPatcher::Functions::ProcessInstallPath;
+# }
+# else
+# {
+#     $GUI->{bm}->Popup(-popover=>undef, -overanchor=>'c', -popanchor=>'c');
+# 	TSLPatcher::Functions::PopulateBuildMenu;
+# }
 
-my ($ggame, $gpath) = TSLPatcher::Functions::GetPathForIni();
+TSLPatcher::FunctionsCLI::ProcessInstallPath;
+TSLPatcher::FunctionsCLI::Install;
+
+# Activates GUI
+# $GUI->{mw}->MainLoop();
+
+my ($ggame, $gpath) = TSLPatcher::FunctionsCLI::GetPathForIni();
 $main_ini->set("KotOR$ggame", $gpath);
 $main_ini->write("$modPath/tslpatcher.ini");
