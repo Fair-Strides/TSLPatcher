@@ -10,6 +10,11 @@ use Cwd;
 use lib 'lib/site';
 use TSLPatcher::FunctionsCLI;
 
+# Testing
+# my $gamePath   		= "C:/Users/kwood/Desktop/KotOR1"; # swkotor directory
+# my $modPath 		= "D:/compressedMods/K1 Galaxy Map Fix Pack"; # mod directory (folder where TSLPatcher lives)
+# my $installOption 	= 0; # Array index for mods with install options
+
 my $gamePath   		= $ARGV[0]; # swkotor directory
 my $modPath 		= $ARGV[1]; # mod directory (folder where TSLPatcher lives)
 my $installOption 	= $ARGV[2]; # Array index for mods with install options

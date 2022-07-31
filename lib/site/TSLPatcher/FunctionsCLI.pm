@@ -30,6 +30,7 @@ use experimental qw/smartmatch autoderef switch/;
 
 use File::Copy;
 use File::Find;
+use File::Spec;
 use File::Path qw/make_path remove_tree/;
 
 use Math::Round;
@@ -52,6 +53,7 @@ my $install_dest_path = undef;
 my $ini_object    = Config::IniMan->new();
 my $uninstall_ini = Config::IniMan->new();
 my $bInstalled   = 0;
+my $namespaceProcessed =0;
 
 my %Tokens       = ();
 my @twoda_tokens = ();
@@ -509,11 +511,12 @@ my %nsOptions = (Count => -1, Index => 0);
 
 sub ProcessNamespaces
 {
+	print "\nProcessNamespaces\n";
 	my $ns_ini = Config::IniMan->new($install_path . '\namespaces.ini');
 	
 	foreach($ns_ini->section_values('Namespaces'))
 	{
-		next if $_ eq '' or $_ =~ /^\;/;
+		next if $_ eq '' or $_ =~ /^\;/;		
 		$nsOptions{Count}++;
 		
 		$nsOptions{$nsOptions{Count}}{Ini}  = $ns_ini->get($_, 'IniName');
@@ -522,29 +525,40 @@ sub ProcessNamespaces
 		$nsOptions{$nsOptions{Count}}{Name} = $ns_ini->get($_, 'Name');
 		$nsOptions{$nsOptions{Count}}{Desc} = $ns_ini->get($_, 'Description');
 	}
+
+	$namespaceProcessed = 1;
 	
-	SetInstallOption(0);
+	# SetInstallOption(0);
 }
 
 sub SetInstallOption
 {
+	print "\nSetInstallOption\n";
 	$nsOptions{Index} = shift;
 }
 
 sub RunInstallOption
 {
+	print "\nRunInstallOption\n";
 	$install_path .= "\\" . $nsOptions{$nsOptions{Index}}{Path};
 	$install_info  = $nsOptions{$nsOptions{Index}}{Info};
 	$install_ini   = $nsOptions{$nsOptions{Index}}{Ini};
 	$install_name  = $nsOptions{$nsOptions{Index}}{Name};
 
 	print "\nSelected $install_name\n";
-	
+	print "\nInstall Path: $install_path\n";
+	print "\nInstall Info: $install_info\n";
+	print "\nInstall Ini: $install_ini\n";
+
+
 	&ProcessInstallPath;
 }
 
 # Build Menu functions
 sub NeedBuildMenu;
+sub PopulateBuildMenu;
+sub BuildMenu_ScrollLeft;
+sub BuildMenu_ScrollRight;
 sub RunInstallPath;
 
 use File::Find;
@@ -572,7 +586,7 @@ sub has_subdir
 	return if ( $subdir eq 'source');
 
     # if we have reached here, this is a subdirector.
-    print "Sub directory found - $subdir\n";
+    #print "Sub directory found - $subdir\n";
 	if(-e $subdir . '/tslpatchdata')
 	{
 		$subdir = substr($subdir, (length($base) + 1), (length($subdir) - length($base) - 1));
@@ -594,6 +608,15 @@ sub NeedBuildMenu
 	return $value;
 }
 
+sub PopulateBuildMenu
+{
+	$pages = int((scalar @subdirs) / ($submax + 1));
+	if((int(scalar @subdirs) % ($submax + 1)) > 0) { $pages += 1; }
+	
+	SetInstallPath(0);
+}
+
+
 sub SetInstallPath
 {
 	my $index = shift;
@@ -604,7 +627,7 @@ sub SetInstallPath
 }
 
 sub RunInstallPath
-{	
+{
 	&ProcessInstallPath;
 }
 
@@ -624,7 +647,7 @@ sub ProcessInstallPath
 {
 	print "\nProcessInstallPath\n";
 
-    if(-e "$install_path/namespaces.ini")
+    if((-e "$install_path/namespaces.ini") && ($namespaceProcessed eq 0))
 	{
 #		print "h0a\n";
 		&ProcessNamespaces;
@@ -677,7 +700,7 @@ sub ProcessInstallPath
 
 sub Install
 {
-	print "\n\nINSTALLING\n\n";
+	print "\n\nInstalling mod from: $base\n\n";
 	
 	# Finish grabbing the mod settings
 	$InstallInfo{Backups}      = $ini_object->get('Settings', 'BackupFiles', 1);
@@ -1377,12 +1400,12 @@ sub MakeBackup
 	my $backup_path = $install_path;
 	$backup_path =~ s#\\#\/#g;
 	my @a = split(/\//, $backup_path);
-#	print "Backup1: $backup_path\n";
+	# print "Backup1: $backup_path\n";
 	my $a_count = scalar @a;
-#	print "Backup_count: $a_count\n";
+	# print "Backup_count: $a_count\n";
 	$a_count -= 2;
 	$backup_path = join("/", @a[0 .. $a_count]);
-#	print "Backup2: $backup_path\n";
+	# print "Backup2: $backup_path\n";
 
 	if((-e "$backup_path\\backup") == 0) { make_path("$backup_path\\backup", {chmod=>0777, user=>$user}); }
 	if((-e "$backup_path\\backup\\$folder") == 0) { make_path("$backup_path\\backup\\$folder", {chmod=>0777, user=>$user}); }
@@ -1830,6 +1853,8 @@ sub DoInstallFiles
 						if(($folder ~~ @ERFs) == 0) { push(@ERFs, $folder); }
 					}
 
+					print "\nInstallPath: $install_path";
+					print "\nfolder: $folder";
 					# Make a backup in the Backup folder
 					if((MakeBackup("$install_dest_path\\$folder", 'modules')) == 1)
 					{
@@ -1841,7 +1866,7 @@ sub DoInstallFiles
 					# memory...
 					$ERF_type = substr($ERF_name, (length($ERF_name) - 3), 3);
 					$ERF_name = substr($ERF_name, 0, (length($ERF_name) - 4));
-					
+
 					make_path("$install_path\\" . $ERF_name, {chmod=>0777, user=>$user});
 
 					foreach(@{$ERF->{Files}})
@@ -2856,7 +2881,7 @@ sub DoGFFList
 	my @lines2 = ();
 	
 	foreach($ini_object->section_params('GFFList'))
-	{
+	{		
 		if($_ ne '' and (($_ =~ /__SKIP__/) == 0) and (($_ =~ /^\;/) == 0))
 		{
 			push(@lines1, $_);
@@ -2916,11 +2941,12 @@ sub DoGFFList
 		if($filename ne '') { $Overwrite = $ini_object->get($piece_value, '!ReplaceFile', 0); }
 		
 		@answer = ExecuteFile($filename, $PatchType, $Overwrite, $Destination);
+
+		print "\n$filename, $PatchType, $Overwrite, $Destination";
 		
 		if(($filename ne '') and ($answer[0] == 1))
 		{
 			if((-e $answer[1]) == 0) { next; }
-			
 			$gff = Bioware::GFF->new();
 			$result = $gff->read_gff_file($answer[1]);
 			
@@ -2995,10 +3021,11 @@ sub DoGFFList
 							
 							$skip = 1;
 						}
-						
+						# lookhere
 						if($skip == 0)
 						{
 							my @v = ChangeGFFFieldValue($gff, $key, $value);
+							print "\n$gff, $key, $value";
 							if($v[0] == 1)
 							{
 								$uninstall_ini->set($un_section, $key, $v[1]);
@@ -3632,7 +3659,7 @@ sub ChangeGFFFieldValue
 	my $struct = $gff->{Main};
 	my $stype  = FIELD_STRUCT;
 	
-#	print "path1: $path\n";
+	# print "path1: $path\n";
 	$path =~ s#\\#\/#g;
 	my @paths = split(/\//, $path);
 	$path = pop @paths;
@@ -3733,7 +3760,7 @@ sub ChangeGFFFieldValue
 #		}
 	}
 	
-#	print "path: $path\n";
+	# print "\npath: $path";
 	if(GetIsStringToken($value))
 	{ $value = ProcessStrRefToken($value); }
 	
@@ -3773,6 +3800,7 @@ sub ChangeGFFFieldValue
 		my $ix = undef;
 		if(ref($struct->{Fields}) ne 'Bioware::GFF::Field')
 		{
+			print "\npath: $path";
 			$ix = $struct->get_field_ix_by_label($path);
 #			print "ix: $ix\n";
 			
